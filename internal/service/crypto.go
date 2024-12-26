@@ -6,11 +6,9 @@ import (
 )
 
 type ICryptoService interface {
-	GetByUserID(ctx context.Context, user *model.User) (*model.User, error)
-
-	GetByUsername(ctx context.Context, user *model.User) (*model.User, error)
-
-	Update(ctx context.Context, user *model.User) error
-
-	Delete(ctx context.Context, user *model.User) error
+	GetAll(ctx context.Context) (*[]model.CryptoCurrency, error)
+	GetBySymbol(ctx context.Context, symb string) (*model.CryptoCurrency, error)
+	Create(ctx context.Context, symbol, description string) (*model.CryptoCurrency, error)
+	Update(ctx context.Context, crypto *model.CryptoCurrency) error
+	Delete(ctx context.Context, user *model.CryptoCurrency) error
 }

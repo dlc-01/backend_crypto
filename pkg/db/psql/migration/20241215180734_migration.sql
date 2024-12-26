@@ -21,13 +21,15 @@ CREATE INDEX idx_users_email ON users(email);
 
 
 CREATE TABLE cryptocurrencies (
-                                  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY
+                                  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
                                   symbol VARCHAR(10) NOT NULL UNIQUE,
+                                  image_url TEXT NOT NULL,
                                   name VARCHAR(100) NOT NULL,
                                   description TEXT,
                                   supply DECIMAL(38, 18),
                                   max_supply DECIMAL(38, 18),
-                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                  updated_at timestamp DEFAULT current_timestamp
 );
 
 CREATE INDEX idx_cryptocurrencies_symbol ON cryptocurrencies(symbol);

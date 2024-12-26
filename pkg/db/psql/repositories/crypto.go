@@ -18,13 +18,17 @@ type CryptoRepo struct {
 	*sql.DB
 }
 
+func NewCryptoRepo(client *sql.DB) *CryptoRepo {
+	return &CryptoRepo{client}
+}
+
 func (c CryptoRepo) Create(ctx context.Context, crypto *model.CryptoCurrency) (*model.CryptoCurrency, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("%w : %s", projectError.ErrorStartingTransaction, err)
 	}
 
-	err = tx.QueryRowContext(ctx, query.CreateCryptocurrency, &crypto.Symbol, &crypto.Name, &crypto.Description, &crypto.Supply, &crypto.MaxSupply).
+	err = tx.QueryRowContext(ctx, query.CreateCryptocurrency, &crypto.Symbol, &crypto.Name, &crypto.ImageURL, &crypto.Description, &crypto.Supply, &crypto.MaxSupply).
 		Scan(&crypto.ID)
 	if err != nil {
 		if errCode := pq.ErrorCode(err.Error()); errCode == "23505" {
@@ -61,6 +65,7 @@ func (c CryptoRepo) GetAll(ctx context.Context) (*[]model.CryptoCurrency, error)
 		err = row.Scan(&crypto.ID,
 			&crypto.Symbol,
 			&crypto.Name,
+			&crypto.ImageURL,
 			&crypto.Description,
 			&crypto.Supply,
 			&crypto.MaxSupply)
@@ -81,11 +86,6 @@ func (c CryptoRepo) GetAll(ctx context.Context) (*[]model.CryptoCurrency, error)
 
 }
 
-func (c CryptoRepo) GetByUUID(ctx context.Context, uuid string) (*model.CryptoCurrency, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (c CryptoRepo) GetBySymbol(ctx context.Context, symbol string) (*model.CryptoCurrency, error) {
 	var stored model.CryptoCurrency
 
@@ -98,6 +98,7 @@ func (c CryptoRepo) GetBySymbol(ctx context.Context, symbol string) (*model.Cryp
 		Scan(&stored.ID,
 			&stored.Symbol,
 			&stored.Name,
+			&stored.ImageURL,
 			&stored.Description,
 			&stored.Supply,
 			&stored.MaxSupply)
@@ -141,13 +142,24 @@ func (c CryptoRepo) Update(ctx context.Context, crypto *model.CryptoCurrency) (*
 		return nil, fmt.Errorf("%w : %s", projectError.ErrorStartingTransaction, err)
 	}
 
-	err = tx.QueryRowContext(ctx, query.UpdateCryptocurrency, crypto.ID,
+	var updatedCrypto model.CryptoCurrency
+
+	err = tx.QueryRowContext(ctx, query.UpdateCryptocurrency,
 		crypto.Symbol,
 		crypto.Name,
 		crypto.Description,
 		crypto.Supply,
-		crypto.MaxSupply).Err()
+		crypto.MaxSupply,
+		crypto.ImageURL).Scan(
+		&updatedCrypto.ID,
+		&updatedCrypto.Symbol,
+		&updatedCrypto.Name,
+		&updatedCrypto.Description,
+		&updatedCrypto.Supply,
+		&updatedCrypto.MaxSupply,
+	)
 	if err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("%w: %s", projectError.ErrorCantUpdateCrypto, err)
 	}
 
@@ -157,8 +169,4 @@ func (c CryptoRepo) Update(ctx context.Context, crypto *model.CryptoCurrency) (*
 	}
 
 	return crypto, nil
-}
-
-func NewCryptoRepo(client *sql.DB) *CryptoRepo {
-	return &CryptoRepo{client}
 }
